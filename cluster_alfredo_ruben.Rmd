@@ -106,7 +106,6 @@ fviz_cos2(componentes,choice="var",axes=1:2)
 ```{r}
 fviz_pca_biplot(componentes,   
                 axes = c(1,2), # Componentes 1 y 2
-                repel = FALSE,
                 label = "none") 
 ```
 
@@ -120,12 +119,12 @@ datos, comenzamos con la clasificación.
 
 ```{r}
 # Librerías para Cluster
-library(cluster) 
-library(ggplot2) 
-library(heatmaply) 
-library(factoextra)
-library(FactoMineR) 
-library(NbClust)
+library(cluster);
+library(ggplot2);
+library(heatmaply); 
+library(factoextra);
+library(FactoMineR); 
+library(NbClust);
 ```
 
 Con este análisis lo que buscamos es hacer grupos de cliente tan parecidos como
@@ -141,11 +140,44 @@ head(bbdd)
 
 ## Método jerárquico.
 
-Utilizamos los datos estandarizados y la distancia de Minkowski que es de la 
-siguiente manera: 
+Utilizamos los datos estandarizados y la distancia de Minkowski que es de la siguiente manera: 
 
-$$d = (\sum_{i=1}^{16} |x_{i}-y_{i}|^{16})^{\frac{1}{16}}$$
+$$d = (\sum_{i=1}^{4} |x_{i}-y_{i}|^{4})^{\frac{1}{4}}$$
 ```{r}
 distancias <- dist(scale(datos), method="minkowski")
 fviz_dist(distancias, show_labels = FALSE)
+```
+
+```{r}
+ward <- hclust(distancias,method="ward.D2") # Algoritmo de cluster
+fviz_dend(ward,cex = 0.02) # Representamos el dendograma
+```
+
+Podemos observar en el dendograma y en la prueba del codo que el número óptimo de clusteres ha emplear son 3 debido a la distancia en la que se unen los dos grandes bloques de la derecha. También podemos observar que prácticamente todas las observaciones se han unido con otra a una distancia casi nula.
+
+```{r}
+fviz_dend(ward, k = 3, cex = 0.02) 
+```
+
+Compruebo el número de observaciones que tiene cada uno de los grupos. 
+```{r}
+grupos <- cutree(ward,k=3)
+table(grupos)
+
+# Añado el grupo al que pertenece cada observación en la bbdd
+datos$cluster1 <- grupos
+head(datos)
+```
+
+A continuación, para tener una imagen visual de cómo se distribuyen los grupos en
+el plano, representamos los clústeres en el plano de las dos primeras componentes principales. 
+Con el análisis que hemos realizado a lo largo del trabajo, sabemos que las dos 
+primeras componentes no representan el 100% de las variables, pero sí el 63.7%.
+
+```{r}
+fviz_cluster(list(data=scale(datos), cluster=grupos),
+             ellipse.type="convex",
+             labelsize = 0,
+             show.clust.cent = TRUE, # Muestra el centroide de cada cluster
+             ggtheme=theme_minimal())
 ```
